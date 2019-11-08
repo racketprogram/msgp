@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -55,6 +56,9 @@ func File(name string, unexported bool) (*FileSet, error) {
 		for _, nm := range pkgs {
 			one = nm
 			break
+		}
+		if one == nil {
+			return nil, errors.New("nil package")
 		}
 		fs.Package = one.Name
 		for _, fl := range one.Files {
@@ -327,6 +331,15 @@ func (fs *FileSet) parseFieldList(fl *ast.FieldList) []gen.StructField {
 			warnln("ignored.")
 		}
 		popstate()
+	}
+
+	// Check duplicated field tag.
+	tagMap := make(map[string]bool)
+	for _, tag := range out {
+		if _, ok := tagMap[tag.FieldTag]; ok {
+			panic("duplicated field tag")
+		}
+		tagMap[tag.FieldTag] = true
 	}
 	return out
 }
